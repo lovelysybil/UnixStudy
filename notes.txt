@@ -171,3 +171,136 @@ B) grep   SYSCALL_VECTOR   /tmp/*.h | cut    -d’:'   -f1| uniq > filename
                                      6)查找2004-11-30 16:36:37时更改过的文件
 # A=`find ./ -name "*php"` |   ls -l –full-time $A 2>/dev/null | grep "2004-11-30 16:36:37"
 
+3. cut用法
+cut命令类似于awk，从行里面抽取信息，是一个功能弱化版的awk。
+cut命令格式为：cut [options] filename
+其中options有：
+-d  指定与空格和t a b键不同的域分隔符。类似于awk的“-F”。
+-f field  指定剪切域数
+-c list  指定剪切字符数。
+
+首先我们来处理按:分割的password文件：
+    # cat passwd  
+    root:x:0:0:root:/root:/bin/sh  
+    proxy:x:13:13:proxy:/bin:/bin/sh  
+    operator:x:37:37:Operator:/var:/bin/sh  
+    ftp:x:83:83:ftp:/home/ftp:/bin/sh  
+    nobody:x:99:99:nobody:/home:/bin/sh  
+    sshd:x:103:99:Operator:/var:/bin/sh  
+
+按:分割，然后取第一列和第六列，-f可以指定获取的域数：
+    # cut -d: -f1,6 passwd  
+    root:/root  
+    proxy:/bin  
+    operator:/var  
+    ftp:/home/ftp  
+    nobody:/home  
+    sshd:/var  
+
+指定域数还可以这样写：
+    # cut -d: -f 1-4,6 passwd  
+    root:x:0:0:/root  
+    proxy:x:13:13:/bin  
+    operator:x:37:37:/var  
+    ftp:x:83:83:/home/ftp  
+    nobody:x:99:99:/home  
+    sshd:x:103:99:/var 
+
+4. grep用法
+Linux系统中有很多文件，比如配置文件、日志文件、用户文件等。文件中都包含了大量的信息，我们可以使用cat等命令轻松将其输出到屏幕，但如果要从文件中分析或提取数据，还需要其他工具来实现。而linux正好提供了这些工具：grep、awk、sed等。把这些工具使用好，可以极大地提高你的工作效率，对系统管理员分析数据有极大帮助，而对linux开发人员来说也可以在开发测试中以及平时使用中节省不少时间。本系列文中将介绍这些工具来实现文本过滤分析。
+
+    常用的grep选项有：
+-c  只输出匹配行的计数。
+-i  不区分大小写（只适用于单字符） 。
+-h  查询多文件时不显示文件名。
+-l  查询多文件时只输出包含匹配字符的文件名。
+-n  显示匹配行及行号。
+-s  不显示不存在或无匹配文本的错误信息。
+-v  显示不包含匹配文本的所有行。
+    本节文章大数示例均使用文件/etc/passwd来作为过滤对象。
+一、匹配行
+最简单（也是最常用）的用法是在一个文件（或多个文件）中查找某一字符串，比如在文件/etc/passwd中查找包含字符串”user”的行：
+
+    # grep "user" /etc/passwd  
+    usbmuxd:x:113:113:usbmuxd user:/:/sbin/nologin  
+    oprofile:x:16:16:Special user account to be used by OProfile:/var/lib/oprofile:/sbin/nologin  
+    qemu:x:107:107:qemu user:/:/sbin/nologin  
+    radvd:x:75:75:radvd user:/:/sbin/nologin  
+    tss:x:59:59:Account used by the trousers package to sandbox the tcsd daemon:/dev/null:/sbin/nologin  
+    saslauth:x:994:76:"Saslauthd user":/run/saslauthd:/sbin/nologin  
+    rpcuser:x:29:29:RPC Service User:/var/lib/nfs:/sbin/nologin  
+    nm-openconnect:x:992:991:NetworkManager user for OpenConnect:/:/sbin/nologin  
+    #  
+
+一般我们将要查找的字符串用双引号包含起来，一是以防被误解为 s h e l l命令，二是可以用来查找多个单词组成的字符串。
+使用-c选项输出匹配行数：
+
+    # grep -c "user" /etc/passwd  
+    8  
+    #  
+
+使用-n选项输出匹配行及行号：
+
+    # grep -n "user" /etc/passwd  
+    18:usbmuxd:x:113:113:usbmuxd user:/:/sbin/nologin  
+    19:oprofile:x:16:16:Special user account to be used by OProfile:/var/lib/oprofile:/sbin/nologin  
+    22:qemu:x:107:107:qemu user:/:/sbin/nologin  
+    25:radvd:x:75:75:radvd user:/:/sbin/nologin  
+    27:tss:x:59:59:Account used by the trousers package to sandbox the tcsd daemon:/dev/null:/sbin/nologin  
+    30:saslauth:x:994:76:"Saslauthd user":/run/saslauthd:/sbin/nologin  
+    34:rpcuser:x:29:29:RPC Service User:/var/lib/nfs:/sbin/nologin  
+    38:nm-openconnect:x:992:991:NetworkManager user for OpenConnect:/:/sbin/nologin  
+    #  
+
+其中第一列输出行号，后面输出行内容。
+我们发现上面匹配“user”的行有的返回的是包含“rpcuser”和“trousers“的行，如果我们要精确地抽取“user”的行，可以这样用：
+
+    # grep -n "\<user\>" /etc/passwd  
+    18:usbmuxd:x:113:113:usbmuxd user:/:/sbin/nologin  
+    19:oprofile:x:16:16:Special user account to be used by OProfile:/var/lib/oprofile:/sbin/nologin  
+    22:qemu:x:107:107:qemu user:/:/sbin/nologin  
+    25:radvd:x:75:75:radvd user:/:/sbin/nologin  
+    30:saslauth:x:994:76:"Saslauthd user":/run/saslauthd:/sbin/nologin  
+    38:nm-openconnect:x:992:991:NetworkManager user for OpenConnect:/:/sbin/nologin  
+    #  
+
+如果要忽略大小写的话可以使用-i选项，如下：
+
+    [root@localhost shell_text_filter]# grep -ni "\<user\>" /etc/passwd  
+    12:ftp:x:14:50:FTP User:/var/ftp:/sbin/nologin  
+    17:polkitd:x:999:999:User for polkitd:/:/sbin/nologin  
+    18:usbmuxd:x:113:113:usbmuxd user:/:/sbin/nologin  
+    19:oprofile:x:16:16:Special user account to be used by OProfile:/var/lib/oprofile:/sbin/nologin  
+    20:colord:x:998:998:User for colord:/var/lib/colord:/sbin/nologin  
+    22:qemu:x:107:107:qemu user:/:/sbin/nologin  
+    25:radvd:x:75:75:radvd user:/:/sbin/nologin  
+    30:saslauth:x:994:76:"Saslauthd user":/run/saslauthd:/sbin/nologin  
+    34:rpcuser:x:29:29:RPC Service User:/var/lib/nfs:/sbin/nologin  
+    35:nfsnobody:x:65534:65534:Anonymous NFS User:/var/lib/nfs:/sbin/nologin  
+    38:nm-openconnect:x:992:991:NetworkManager user for OpenConnect:/:/sbin/nologin  
+       
+
+使用选项-v可以过滤不含指定字符串的行：
+
+    # grep -v "a" /etc/passwd    
+    bin:x:1:1:bin:/bin:/sbin/nologin  
+    sync:x:5:0:sync:/sbin:/bin/sync  
+    shutdown:x:6:0:shutdown:/sbin:/sbin/shutdown  
+    nobody:x:99:99:Nobody:/:/sbin/nologin  
+    polkitd:x:999:999:User for polkitd:/:/sbin/nologin  
+    usbmuxd:x:113:113:usbmuxd user:/:/sbin/nologin  
+    unbound:x:997:997:Unbound DNS resolver:/etc/unbound:/sbin/nologin  
+    qemu:x:107:107:qemu user:/:/sbin/nologin  
+    openvpn:x:996:995:OpenVPN:/etc/openvpn:/sbin/nologin  
+    tcpdump:x:72:72::/:/sbin/nologin  
+    #  
+
+上面列出的行都不包含”a”。
+结合使用ps命令可以查找当前系统是否正在运行我们需要的程序，命令如下：
+
+    # ps x | grep vsftpd  
+    1020 ?      Ss    0:00 /usr/sbin/vsftpd /etc/vsftpd/vsftpd.conf  
+    10264 pts/1    S+    0:00 grep --color=auto vsftpd  
+    #  
+
+但是发现打印结果包含当前shell进程，我们可以通过使用-v选项来过滤输出结果，如
