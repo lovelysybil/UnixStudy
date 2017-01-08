@@ -1,4 +1,4 @@
-PROG:timeServer timeClient tcpClient tcpServer
+PROG:timeServer timeClient tcpClient tcpServer CalClient CalServer
 
 timeServer: daytimetcpsrv.c
 	gcc daytimetcpsrv.c -o timeServer
@@ -21,6 +21,11 @@ tcpcli01.o: tcpcli01.c
 rdwt.o: rdwt.c
 	gcc -c rdwt.c
 
+CalClient: tcpCalClient.c
+	gcc tcpCalClient.c -o CalClient
+
+CalServer: tcpCalServer.c
+	gcc tcpCalServer.c -o CalServer
 
 clean:
-	rm -rf *.o timeServer timeClient tcpServer tcpClient
+	rm -rf *.o timeServer timeClient tcpServer tcpClient CalClient CalServer
